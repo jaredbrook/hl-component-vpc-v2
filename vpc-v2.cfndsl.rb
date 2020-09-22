@@ -382,6 +382,21 @@ CloudFormation do
         Ref("NetworkInterface#{az}"),
         Ref("NetworkInterface0")) # defaults to nat 0 if no nat in that az
     }
+
+    if external_parameters[:enable_transit_vpc]
+      vgw_routes = external_parameters.fetch(:vgw_routes, [])
+      if vgw_routes.any?
+        vgw_routes.each do |route|
+          route_name = route.gsub(/[^0-9a-z ]/i, '')
+          EC2_Route("RouteOutTo#{route_name}#{az}ViaVGW") {
+            Condition('DoEnableTransitVPC')
+            RouteTableId Ref("RouteTablePrivate#{az}")
+            DestinationCidrBlock route
+            GatewayId Ref(:VGW)
+          }
+        end
+      end
+    end
     
   end
   
